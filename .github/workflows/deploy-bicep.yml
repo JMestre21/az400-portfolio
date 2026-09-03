@@ -1,57 +1,52 @@
-name: 'Deploy Bicep Infrastructure'
+name: Deploy Bicep Infrastructure
 
-# Defines when this pipeline automatically triggers
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
+  push:
+    branches: [ main ]
 
 jobs:
-  # JOB 1: Validates Bicep code quality, formatting, and syntax on every PR
   validate:
-    name: 'Validate Bicep Template'
+    name: Validate Bicep & Preview Changes
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Download repository files into the GitHub Actions runner VM
-      - name: Checkout Source Code
-        uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4
 
-      # Step 2: Authenticate to Azure using your stored GitHub Secret
       - name: Log in to Azure
         uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Step 3: Test Bicep template syntax at the Subscription scope
       - name: Validate Bicep Syntax
         run: |
           az deployment sub validate \
             --location eastus \
             --template-file main.bicep
 
-  # JOB 2: Deploys resources to Azure ONLY after merging code into main
+      - name: Preview Infrastructure Changes (What-If)
+        if: github.event_name == 'pull_request'
+        run: |
+          az deployment sub what-if \
+            --location eastus \
+            --template-file main.bicep
+
   deploy:
-    name: 'Deploy to Azure'
-    needs: validate # Ensures validation passes before deployment starts
+    name: Deploy to Azure
+    needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4
 
       - name: Log in to Azure
         uses: azure/login@v3
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Step 3: Deploy the Resource Group and Storage Account using the official Azure Action
       - name: Execute Bicep Subscription Deployment
         uses: azure/arm-deploy@v1
         with:
           scope: subscription
           region: eastus
           template: ./main.bicep
-          deploymentName: 'github-actions-${{ github.run_id }}'
