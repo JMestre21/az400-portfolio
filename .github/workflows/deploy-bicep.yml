@@ -17,7 +17,7 @@ jobs:
     steps:
       # Step 1: Download repository files into the GitHub Actions runner VM
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       # Step 2: Authenticate to Azure using your stored GitHub Secret
       - name: Log in to Azure
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Log in to Azure
         uses: azure/login@v3
