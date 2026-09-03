@@ -8,6 +8,11 @@ param resourceGroupName string = 'rg-az400-devops-lab'
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: resourceGroupName
   location: location
+  tags: {
+    Environment: 'Dev'
+    ManagedBy: 'Bicep'
+    Project: 'AZ400-Portfolio'
+  }
 }
 
 // 2. Deploy the storage module INSIDE the resource group created above
