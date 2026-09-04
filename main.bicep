@@ -1,25 +1,26 @@
-// Explicitly set the deployment target to Subscription level
 targetScope = 'subscription'
 
 param location string = 'eastus'
 param resourceGroupName string = 'rg-az400-devops-lab'
+param storageAccountName string = 'staz400lab${uniqueString(subscription().id)}'
 
-// 1. Create the Resource Group at the subscription scope
+// Create Resource Group with Tags
 resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   name: resourceGroupName
   location: location
   tags: {
-    Environment: 'Dev'
-    ManagedBy: 'Bicep'
-    Project: 'AZ400-Portfolio'
+    Environment: 'dev'
+    ManagedBy: 'Bicep-CI-CD'
+    CostCenter: 'AZ400-Lab'
   }
 }
 
-// 2. Deploy the storage module INSIDE the resource group created above
-module storageModule './storage.bicep' = {
-  name: 'storageModuleDeployment'
-  scope: rg // <--- CRITICAL: This tells Bicep to switch scope to the Resource Group
+// Deploy Storage Account Module
+module storage './storage.bicep' = {
+  name: 'storageDeployment'
+  scope: rg
   params: {
     location: location
+    storageName: storageAccountName
   }
 }
