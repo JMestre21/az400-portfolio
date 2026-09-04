@@ -5,7 +5,7 @@ param resourceGroupName string = 'rg-az400-devops-lab'
 param storageAccountName string = 'staz400lab${uniqueString(subscription().id)}'
 
 // Create Resource Group with Tags
-resource rg 'Microsoft.Resources/resourceGroups@2023-07-01' = {
+resource rg 'Microsoft.Resources/resourceGroups@2024-11-01' = {
   name: resourceGroupName
   location: location
   tags: {
