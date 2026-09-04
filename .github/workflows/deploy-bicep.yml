@@ -34,7 +34,7 @@ jobs:
         uses: microsoft/ps-rule@v2.9.0
         with:
           modules: 'PSRule.Rules.Azure'
-          baseline: 'Azure.GA_2023_03'
+          inputType: repository
           outputFormat: Sarif
           outputPath: ps-rule-results.sarif
         continue-on-error: true
