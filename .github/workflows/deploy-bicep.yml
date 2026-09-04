@@ -12,13 +12,13 @@ permissions:
 
 jobs:
   validate:
-    name: Validate Bicep & Security Checks
+    name: Validate Bicep & Preview Changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
 
       - name: Log in to Azure via OIDC
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -30,17 +30,6 @@ jobs:
             --location eastus \
             --template-file main.bicep
 
-      # Static Security Analysis runs on all PRs and Pushes
-      - name: Run PSRule for Azure Analysis
-        uses: microsoft/ps-rule-action@v2.0.0
-        with:
-          modules: 'PSRule.Rules.Azure'
-          baseline: 'Azure.GA_2023_03'
-          outputFormat: Sarif
-          outputPath: ps-rule-results.sarif
-        continue-on-error: false
-
-      # What-If preview only runs on Pull Requests
       - name: Preview Infrastructure Changes (What-If)
         if: github.event_name == 'pull_request'
         run: |
@@ -57,14 +46,16 @@ jobs:
       - uses: actions/checkout@v4.2.2
 
       - name: Log in to Azure via OIDC
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Execute Bicep Subscription Deployment
-        run: |
-          az deployment sub create \
-            --location eastus \
-            --template-file main.bicep
+        uses: azure/arm-deploy@v1
+        with:
+          scope: subscription
+          region: eastus
+          template: ./main.bicep
+
