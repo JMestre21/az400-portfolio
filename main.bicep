@@ -21,6 +21,6 @@ module storage './storage.bicep' = {
   scope: rg
   params: {
     location: location
-    storageAccountName: storageAccountName
+    storageName: storageAccountName
   }
 }
