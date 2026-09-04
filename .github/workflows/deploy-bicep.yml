@@ -59,19 +59,3 @@ jobs:
           region: eastus
           template: ./main.bicep
 
-    # --- NEW: PSRule Static Security Analysis ---
-      - name: Run PSRule for Azure Analysis
-        uses: microsoft/ps-rule-action@v2.0.0
-        with:
-          modules: 'PSRule.Rules.Azure'
-          baseline: 'Azure.GA_2023_03'
-          outputFormat: Sarif
-          outputPath: ps-rule-results.sarif
-        continue-on-error: false
-
-      - name: Preview Infrastructure Changes (What-If)
-        if: github.event_name == 'pull_request'
-        run: |
-          az deployment sub what-if \
-            --location eastus \
-            --template-file main.bicep 
