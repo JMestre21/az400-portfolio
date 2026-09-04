@@ -59,3 +59,12 @@ jobs:
           region: eastus
           template: ./main.bicep
 
+      - name: Run PSRule for Azure Analysis
+        uses: microsoft/ps-rule-action@v2.0.0
+        with:
+          modules: 'PSRule.Rules.Azure'
+          baseline: 'Azure.GA_2023_03'
+          outputFormat: Sarif
+          outputPath: ps-rule-results.sarif
+        continue-on-error: true
+
