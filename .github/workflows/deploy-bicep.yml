@@ -13,7 +13,7 @@ on:
         options:
           - all
           - dev
-          - production
+          - prod
 
 permissions:
   id-token: write
@@ -105,8 +105,8 @@ jobs:
 
   deploy-prod:
     name: Deploy to Production
-    needs: deploy-dev
-    if: ${{ github.event_name == 'push' || github.event.inputs.target_env == 'production' || github.event.inputs.target_env == 'all' }}
+    needs: validate
+    if: ${{ github.event_name == 'push' || github.event.inputs.target_env == 'prod' || github.event.inputs.target_env == 'all' }}
     runs-on: ubuntu-latest
     environment: prod
     steps:
