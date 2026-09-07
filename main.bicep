@@ -1,26 +1,42 @@
 targetScope = 'subscription'
 
-param location string = 'eastus'
-param resourceGroupName string = 'rg-az400-devops-lab'
-param storageAccountName string = 'staz400lab${uniqueString(subscription().id)}'
+@description('Target environment tier')
+@allowed([
+  'dev'
+  'prod'
+])
+param environment string
 
-// Create Resource Group with Tags
+@description('Primary Azure region for infrastructure')
+param location string = 'eastus'
+
+@description('Storage Account redundancy SKU')
+param storageSku string
+
+// Naming convention: rg-az400-<env>-lab
+var resourceGroupName = 'rg-az400-${environment}-lab'
+
+// Resource Group creation at Subscription scope
 resource rg 'Microsoft.Resources/resourceGroups@2024-11-01' = {
   name: resourceGroupName
   location: location
   tags: {
-    Environment: 'dev'
-    ManagedBy: 'Bicep-CI-CD'
-    CostCenter: 'AZ400-Lab'
+    Environment: environment
+    ManagedBy: 'GitHubActions'
+    Project: 'AZ400-Portfolio'
   }
 }
 
-// Deploy Storage Account Module
+// Module invocation targeting the created Resource Group
 module storage './storage.bicep' = {
-  name: 'storageDeployment'
+  name: 'storageDeploy-${environment}'
   scope: rg
   params: {
     location: location
-    storageName: storageAccountName
+    // Globality constraint: Append unique string based on RG ID
+    storageName: 'staz400${environment}${uniqueString(rg.id)}'
+    storageSku: storageSku
   }
 }
+
+output deployedResourceGroupName string = rg.name

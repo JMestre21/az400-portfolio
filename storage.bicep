@@ -1,18 +1,26 @@
-// Do NOT include targetScope here; it defaults to 'resourceGroup' automatically
-
+@description('Azure region for the storage account')
 param location string
 
-// Generates a globally unique name based on the Resource Group ID
-param storageName string = 'staz400${uniqueString(resourceGroup().id)}'
+@description('Unique name for the storage account')
+param storageName string
 
-resource sa 'Microsoft.Storage/storageAccounts@2025-01-01' = {
+@description('Storage redundant SKU type (e.g., Standard_LRS, Standard_ZRS)')
+param storageSku string
+
+resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   name: storageName
   location: location
   sku: {
-    name: 'Standard_LRS'
+    name: storageSku
   }
   kind: 'StorageV2'
   properties: {
     accessTier: 'Hot'
+    supportsHttpsTrafficOnly: true
+    minimumTlsVersion: 'TLS1_2'
+    allowBlobPublicAccess: false
   }
 }
+
+output storageAccountId string = storageAccount.id
+output primaryEndpoints object = storageAccount.properties.primaryEndpoints
