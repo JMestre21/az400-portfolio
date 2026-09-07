@@ -86,7 +86,7 @@ jobs:
           az deployment sub create \
             --location eastus \
             --template-file main.bicep \
-            --parameters parameters/dev.bicepparam
+            --parameters .github/parameters/dev.bicepparam
 
   deploy-prod:
     name: Deploy to Production
@@ -109,7 +109,7 @@ jobs:
           az deployment sub create \
             --location eastus \
             --template-file main.bicep \
-            --parameters parameters/prod.bicepparam
+            --parameters .github/parameters/prod.bicepparam
 
     
 

@@ -17,7 +17,7 @@ param storageSku string
 var resourceGroupName = 'rg-az400-${environment}-lab'
 
 // Resource Group creation at Subscription scope
-resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
+resource rg 'Microsoft.Resources/resourceGroups@2024-11-01' = {
   name: resourceGroupName
   location: location
   tags: {
