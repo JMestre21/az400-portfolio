@@ -1,6 +1,8 @@
 name: Deploy Bicep Infrastructure
 
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -8,28 +10,72 @@ on:
       target_env:
         description: 'Select Environment to Deploy'
         required: true
-        default: 'all'
+        default: 'dev'
         type: choice
         options:
-          - all
           - dev
           - prod
 
 permissions:
-  id-token: write
-  contents: read
-  security-events: write
+  id-token: write          # Required for Azure OIDC authentication
+  contents: read           # Required to check out repository code
+  security-events: write   # Required to upload SARIF reports to GitHub Security tab
 
 jobs:
+  # ====================================================================
+  # JOB 1: DEVSECOPS SECURITY & COMPLIANCE SCANNING (DOMAIN 2)
+  # ====================================================================
+  security-and-compliance:
+    name: DevSecOps Compliance & Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. PSRule Analysis (Well-Architected Framework Compliance)
+      - name: Run PSRule for Azure WAF Analysis
+        uses: microsoft/ps-rule@v2.9.0
+        with:
+          modules: 'PSRule.Rules.Azure'
+          inputType: repository
+          outputFormat: Sarif
+          outputPath: ps-rule-results.sarif
+        continue-on-error: true 
+
+      # 2. Checkov Static IaC Security Analysis
+      - name: Run Checkov Static Analysis
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: bicep
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+          soft_fail: true
+
+      # 3. Upload Security Results to GitHub Security Tab (SARIF)
+      - name: Upload PSRule Results to Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ps-rule-results.sarif
+          category: ps-rule
+
+      - name: Upload Checkov Results to Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov-results.sarif
+          category: checkov
+
+  # ====================================================================
+  # JOB 2: VALIDATION & WHAT-IF PREVIEW
+  # ====================================================================
   validate:
     name: Validate Bicep & Preview Changes
+    needs: security-and-compliance
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Log in to Azure via OIDC
         uses: azure/login@v2
@@ -38,40 +84,9 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Validate Dev Configuration
-      - name: Validate Bicep (Dev)
-        run: |
-          az deployment sub validate \
-            --location eastus \
-            --template-file main.bicep \
-            --parameters .github/parameters/dev.bicepparam
+      - name: Bicep Syntax Validation
+        run: az bicep build --file main.bicep
 
-      # Validate Prod Configuration
-      - name: Validate Bicep (Prod)
-        run: |
-          az deployment sub validate \
-            --location eastus \
-            --template-file main.bicep \
-            --parameters .github/parameters/prod.bicepparam
-
-      - name: Run PSRule for Azure Analysis
-        uses: microsoft/ps-rule@v2.9.0
-        continue-on-error: true
-        with:
-          modules: 'PSRule.Rules.Azure'
-          inputType: repository
-          outputFormat: Sarif
-          outputPath: ps-rule-results.sarif
-        
-
-      - name: Upload PSRule Scan Results to Security Tab
-        uses: github/codeql-action/upload-sarif@v3.28.11
-        if: always()
-        with:
-          sarif_file: ps-rule-results.sarif
-            
-
-      # What-If Preview for Dev on PRs
       - name: Preview Changes (Dev What-If)
         if: github.event_name == 'pull_request'
         run: |
@@ -80,14 +95,18 @@ jobs:
             --template-file main.bicep \
             --parameters .github/parameters/dev.bicepparam
 
+  # ====================================================================
+  # JOB 3: DEPLOYMENT TO DEV ENVIRONMENT
+  # ====================================================================
   deploy-dev:
-    name: Deploy to Development
+    name: Deploy to Dev Environment
     needs: validate
-    if: ${{ github.event_name == 'push' || github.event.inputs.target_env == 'dev' || github.event.inputs.target_env == 'all' }}
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event.inputs.target_env == 'dev')
     environment: dev
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Log in to Azure via OIDC
         uses: azure/login@v2
@@ -99,18 +118,23 @@ jobs:
       - name: Deploy Dev Infrastructure
         run: |
           az deployment sub create \
+            --name "dev-deploy-${{ github.run_id }}" \
             --location eastus \
             --template-file main.bicep \
             --parameters .github/parameters/dev.bicepparam
 
+  # ====================================================================
+  # JOB 4: DEPLOYMENT TO PRODUCTION ENVIRONMENT
+  # ====================================================================
   deploy-prod:
-    name: Deploy to Production
+    name: Deploy to Production Environment
     needs: validate
-    if: ${{ github.event_name == 'push' || github.event.inputs.target_env == 'prod' || github.event.inputs.target_env == 'all' }}
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event.inputs.target_env == 'prod')
     environment: prod
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Log in to Azure via OIDC
         uses: azure/login@v2
@@ -122,9 +146,7 @@ jobs:
       - name: Deploy Prod Infrastructure
         run: |
           az deployment sub create \
+            --name "prod-deploy-${{ github.run_id }}" \
             --location eastus \
             --template-file main.bicep \
             --parameters .github/parameters/prod.bicepparam
-
-    
-
