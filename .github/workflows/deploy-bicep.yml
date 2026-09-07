@@ -3,8 +3,17 @@ name: Deploy Bicep Infrastructure
 on:
   pull_request:
     branches: [ main ]
-  push:
-    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Select Environment to Deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - dev
+          - production
 
 permissions:
   id-token: write
@@ -74,7 +83,7 @@ jobs:
   deploy-dev:
     name: Deploy to Development
     needs: validate
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: ${{ github.event_name == 'push' || github.event.inputs.target_env == 'dev' || github.event.inputs.target_env == 'all' }}
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -97,7 +106,7 @@ jobs:
   deploy-prod:
     name: Deploy to Production
     needs: deploy-dev
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: ${{ github.event_name == 'push' || github.event.inputs.target_env == 'production' || github.event.inputs.target_env == 'all' }}
     runs-on: ubuntu-latest
     environment: prod
     steps:
