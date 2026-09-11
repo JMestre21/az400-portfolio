@@ -22,7 +22,7 @@ permissions:
   security-events: write   # Required to upload SARIF reports to GitHub Security tab
 
 jobs:
-  # ====================================================================
+ # ====================================================================
   # JOB 1: DEVSECOPS SECURITY & COMPLIANCE SCANNING (DOMAIN 2)
   # ====================================================================
   security-and-compliance:
@@ -32,40 +32,52 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. PSRule Analysis (Well-Architected Framework Compliance)
+      # 1. Dependency Review Gate (Runs ONLY on Pull Requests)
+      - name: Dependency Review Gate
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: 'high'
+        continue-on-error: true
+
+      # 2. Create Reports Directory for SARIF Outputs
+      - name: Create Reports Directory
+        run: mkdir -p reports
+
+      # 3. PSRule Analysis (Outputs directly into created reports/ directory)
       - name: Run PSRule for Azure WAF Analysis
         uses: microsoft/ps-rule@v2.9.0
         with:
           modules: 'PSRule.Rules.Azure'
-          inputType: repository
           outputFormat: Sarif
-          outputPath: ps-rule-results.sarif
-        continue-on-error: true 
+          outputPath: reports/ps-rule-results.sarif
+        continue-on-error: true
 
-      # 2. Checkov Static IaC Security Analysis
+      # 4. Checkov Static IaC Security Analysis
       - name: Run Checkov Static Analysis
         uses: bridgecrewio/checkov-action@master
         with:
           framework: bicep
           output_format: sarif
-          output_file_path: checkov-results.sarif
+          output_file_path: reports/checkov-results.sarif
           soft_fail: true
 
-      # 3. Upload Security Results to GitHub Security Tab (SARIF)
+      # 5. Upload PSRule Results to Security Tab
       - name: Upload PSRule Results to Security Tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: ps-rule-results.sarif
+          sarif_file: reports/ps-rule-results.sarif
           category: ps-rule
 
+      # 6. Upload Checkov Results to Security Tab
       - name: Upload Checkov Results to Security Tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: checkov-results.sarif
+          sarif_file: reports/checkov-results.sarif
           category: checkov
-
+          
   # ====================================================================
   # JOB 2: VALIDATION & WHAT-IF PREVIEW
   # ====================================================================
