@@ -32,6 +32,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+        # Block PRs if new packages contain High or Critical CVEs
+      - name: Dependency Review Gate
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: 'high'
+
       # 1. PSRule Analysis (Well-Architected Framework Compliance)
       - name: Run PSRule for Azure WAF Analysis
         uses: microsoft/ps-rule@v2.9.0
