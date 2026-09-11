@@ -103,7 +103,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           az deployment sub what-if \
-            --location eastus \
+            --location eastus2 \
             --template-file main.bicep \
             --parameters .github/parameters/dev.bicepparam
 
