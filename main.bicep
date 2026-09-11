@@ -13,6 +13,10 @@ param location string = 'eastus'
 @description('Storage Account redundancy SKU')
 param storageSku string
 
+@description('Database administrator password (auto-generated GUID default)')
+@secure()
+param dbAdminPassword string = newGuid()
+
 // Naming convention: rg-az400-<env>-lab
 var resourceGroupName = 'rg-az400-${environment}-lab'
 
@@ -39,4 +43,38 @@ module storage './storage.bicep' = {
   }
 }
 
-output deployedResourceGroupName string = rg.name
+// Module for Key Vault and Key Vault Secrets
+module keyVault 'modules/keyvault.bicep' = {
+  name: 'keyVaultDeployment'
+  scope: rg
+  params: {
+    location: location
+    environmentName: environment
+    dbAdminPassword: dbAdminPassword
+  }
+}
+
+// Module for App Service with Key Vault reference
+module appService 'modules/appservice.bicep' = {
+  name: 'appServiceDeployment'
+  scope: rg
+  params: {
+    location: location
+    environmentName: environment
+    keyVaultName: keyVault.outputs.keyVaultName
+  }
+}
+
+// 5. RBAC Role Assignment Module (Breaks Circular Dependency)
+module keyVaultRbac 'modules/keyvault-rbac.bicep' = {
+  name: 'keyVaultRbacDeployment'
+  scope: rg
+  params: {
+    keyVaultName: keyVault.outputs.keyVaultName
+    principalId: appService.outputs.principalId
+  }
+}
+
+output storageAccountName string = storage.outputs.storageAccountName
+output appServiceHostName string = appService.outputs.principalId
+output keyVaultName string = keyVault.outputs.keyVaultName
