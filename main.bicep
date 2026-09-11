@@ -8,7 +8,7 @@ targetScope = 'subscription'
 param environment string
 
 @description('Primary Azure region for infrastructure')
-param location string = 'eastus'
+param location string = 'eastus2'
 
 @description('Storage Account redundancy SKU')
 param storageSku string
