@@ -1,9 +1,11 @@
-param location string
+param location string = resourceGroup().location
 param environmentName string
 @secure()
 param dbAdminPassword string
 
-var keyVaultName = take('kvaz400${environmentName}${uniqueString(resourceGroup().id)}', 24)
+// Include location in uniqueString seed to avoid soft-delete collisions across regions
+var uniqueSuffix = uniqueString(subscription().subscriptionId, resourceGroup().id, location)
+var keyVaultName = take('kvaz400${environmentName}${uniqueSuffix}', 24)
 
 resource kv 'Microsoft.KeyVault/vaults@2024-11-01' = {
   name: keyVaultName
