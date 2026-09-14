@@ -131,7 +131,7 @@ jobs:
         run: |
           az deployment sub create \
             --name "dev-deploy-${{ github.run_id }}" \
-            --location eastus \
+            --location eastus2 \
             --template-file main.bicep \
             --parameters .github/parameters/dev.bicepparam
 
@@ -159,6 +159,6 @@ jobs:
         run: |
           az deployment sub create \
             --name "prod-deploy-${{ github.run_id }}" \
-            --location eastus \
+            --location eastus2 \
             --template-file main.bicep \
             --parameters .github/parameters/prod.bicepparam
