@@ -104,7 +104,7 @@ jobs:
         run: |
           az deployment sub what-if \
             --name "dev-sub-deploy-${{ github.run_id }}" \
-            --location eastus2 \
+            --location canadacentral \
             --template-file main.bicep \
             --parameters .github/parameters/dev.bicepparam
 
@@ -132,7 +132,7 @@ jobs:
         run: |
           az deployment sub create \
             --name "dev-sub-deploy-${{ github.run_id }}" \
-            --location eastus2 \
+            --location canadacentral \
             --template-file main.bicep \
             --parameters .github/parameters/dev.bicepparam
 
@@ -160,6 +160,6 @@ jobs:
         run: |
           az deployment sub create \
             --name "prod-sub-deploy-${{ github.run_id }}" \
-            --location eastus2 \
+            --location canadacentral \
             --template-file main.bicep \
             --parameters .github/parameters/prod.bicepparam

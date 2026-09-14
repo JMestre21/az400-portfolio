@@ -21,7 +21,7 @@
     },
     "location": {
       "type": "string",
-      "defaultValue": "eastus2",
+      "defaultValue": "canadacentral",
       "metadata": {
         "description": "Primary Azure region for infrastructure"
       }
