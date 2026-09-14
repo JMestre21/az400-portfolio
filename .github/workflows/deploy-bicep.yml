@@ -103,7 +103,8 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           az deployment sub what-if \
-            --location eastus \
+            --name "dev-sub-deploy-${{ github.run_id }}" \
+            --location canadacentral \
             --template-file main.bicep \
             --parameters .github/parameters/dev.bicepparam
 
@@ -130,8 +131,8 @@ jobs:
       - name: Deploy Dev Infrastructure
         run: |
           az deployment sub create \
-            --name "dev-deploy-${{ github.run_id }}" \
-            --location eastus \
+            --name "dev-sub-deploy-${{ github.run_id }}" \
+            --location canadacentral \
             --template-file main.bicep \
             --parameters .github/parameters/dev.bicepparam
 
@@ -158,7 +159,7 @@ jobs:
       - name: Deploy Prod Infrastructure
         run: |
           az deployment sub create \
-            --name "prod-deploy-${{ github.run_id }}" \
-            --location eastus \
+            --name "prod-sub-deploy-${{ github.run_id }}" \
+            --location canadacentral \
             --template-file main.bicep \
             --parameters .github/parameters/prod.bicepparam
