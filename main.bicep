@@ -30,7 +30,15 @@ resource rg 'Microsoft.Resources/resourceGroups@2024-11-01' = {
     Project: 'AZ400-Portfolio'
   }
 }
-
+// Monitoring Module (Log Analytics + App Insights)
+module monitoring 'modules/monitoring.bicep' = {
+  name: 'monitoringDeployment'
+  scope: rg
+  params: {
+    location: location
+    environmentName: environment
+  }
+}
 // Module invocation targeting the created Resource Group
 module storage './storage.bicep' = {
   name: 'storageDeploy-${environment}'
@@ -62,6 +70,7 @@ module appService 'modules/appservice.bicep' = {
     location: location
     environmentName: environment
     keyVaultName: keyVault.outputs.keyVaultName
+    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
   }
 }
 
