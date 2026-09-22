@@ -1,6 +1,7 @@
 param location string
 param environmentName string
 param keyVaultName string
+param appInsightsConnectionString string
 
 var appServiceName = 'app-az400-${environmentName}-${uniqueString(resourceGroup().id)}'
 var appServicePlanName = 'plan-az400-${environmentName}'
@@ -27,6 +28,14 @@ resource appService 'Microsoft.Web/sites@2024-11-01' = {
         {
           name: 'DATABASE_PASSWORD'
           value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=DbPassword)'
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsightsConnectionString
+        }
+        {
+          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+          value: '~3'
         }
       ]
     }
